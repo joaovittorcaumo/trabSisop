@@ -17,7 +17,7 @@ public class Scheduler extends Thread {
         while (true) {
             try {
                 schedulerSemaphore.acquire();
-                ProcessControlBlock next = processManager.readyProcessControlBlocks.poll();
+                ProcessControlBlock next = processManager.readyProcesses.poll();
                 assert next != null;
                 CPU.setCurrentProcess(next);
                 CPU.execSemaphore.release();

@@ -13,17 +13,17 @@ import java.util.concurrent.Semaphore;
 
 public class Console extends Thread {
     public static Semaphore consoleSemaphore = new Semaphore(0);
-    public static Queue<IORequest> requests = new LinkedList<>();
+    public static Queue<IORequest> ioRequests = new LinkedList<>();
 
     private CPU cpu;
     private ProcessManager processManager;
 
-    Scanner scanner;
+    Scanner inputScanner;
 
     public Console(CPU cpu) {
         this.cpu = cpu;
         this.processManager = ProcessManager.getInstance();
-        this.scanner = new Scanner(System.in);
+        this.inputScanner = new Scanner(System.in);
     }
 
     @Override
@@ -33,10 +33,10 @@ public class Console extends Thread {
         while (true) {
             try {
                 consoleSemaphore.acquire();
-                IORequest request = requests.poll();
-                switch (Objects.requireNonNull(request).getType()) {
-                    case READ -> this.read(request);
-                    case WRITE -> this.write(request);
+                IORequest currentRequest = ioRequests.poll();
+                switch (Objects.requireNonNull(currentRequest).getType()) {
+                    case READ -> this.read(currentRequest);
+                    case WRITE -> this.write(currentRequest);
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -44,22 +44,20 @@ public class Console extends Thread {
         }
     }
 
-    private void read(IORequest request) {
-        System.out.println("(aguardando entrada do teclado)");
-        // bug with scanner
-        int resultado = Integer.parseInt(scanner.next());
-        VM.mem.memoryArray[request.getMemoryAddress()] = new Word(Opcode.DATA, -1, -1, resultado);
-        signalIOFinished();
+    private void read(IORequest currentRequest) {
+        System.out.println("(waiting for keyboard input)");
+        int result = Integer.parseInt(inputScanner.next());
+        VM.memory.memoryArray[currentRequest.getMemoryAddress()] = new Word(Opcode.DATA, -1, -1, result);
+        signalIOCompletion();
     }
 
-    private void write(IORequest request) {
-        Word resultado = VM.mem.memoryArray[request.getMemoryAddress()];
-        System.out.println(resultado.p);
-        signalIOFinished();
+    private void write(IORequest currentRequest) {
+        Word result = VM.memory.memoryArray[currentRequest.getMemoryAddress()];
+        System.out.println(result.p);
+        signalIOCompletion();
     }
 
-    private void signalIOFinished() {
-        // fim do IO, comunicando CPU que IO está pronto
+    private void signalIOCompletion() {
         this.cpu.interrupt = Interrupts.ioPronto;
         if (!processManager.someProcessIsRunning()) {
             cpu.checkInterruption(null);

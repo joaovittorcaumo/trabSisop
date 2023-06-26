@@ -56,7 +56,7 @@ public class CPU extends Thread {
             try {
                 execSemaphore.acquire();
                 assert currentProcess != null;
-                this.setContext(currentProcess.getPc(), currentProcess.registers.clone());
+                this.setContext(currentProcess.getProgramCounter(), currentProcess.registerValues.clone());
                 currentProcess.setProcessStatus(ProcessStatus.RUNNING);
                 this.run(currentProcess);
             } catch (InterruptedException e) {
@@ -90,10 +90,10 @@ public class CPU extends Thread {
     }
 
     public void run(ProcessControlBlock pcb) throws InterruptedException {
-        clockCycles = pcb.getClockCount();
+        clockCycles = pcb.getClockCycleCount();
         int physicalAddress;
         if (debug) {
-            System.out.println("        executando programa " + pcb.getId());
+            System.out.println("        executando programa " + pcb.getProcessId());
         }
         // execucao da components.CPU supoe que o contexto da components.CPU, vide
         // acima, esta devidamente setado
@@ -332,14 +332,9 @@ public class CPU extends Thread {
     }
 
     public void updatePCB(ProcessControlBlock pcb, int clockCycles) {
-        pcb.setRegisters(registers.clone());
-        pcb.setPc(pc);
-        pcb.setClockCount(clockCycles);
-        // TODO: logs
-        // System.out.println("PC: " + pc);
-        // for (int i = 0; i < registers.length; i++) {
-        // System.out.println("Registrador " + i + ": " + registers[i]);
-        // }
+        pcb.setRegisterValues(registers.clone());
+        pcb.setProgramCounter(pc);
+        pcb.setClockCycleCount(clockCycles);
     }
 
     public void resetClockCycles() {

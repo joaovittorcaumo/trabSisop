@@ -12,17 +12,14 @@ import static utils.MemoryTranslator.translate;
 public class ProcessManager {
 
     private static ProcessManager instance = null;
-
-    private static int processId = 0;
+    private static int processCounter = 0;
 
     public MemoryManager memoryManager;
+    public List<ProcessControlBlock> allProcesses;
+    public Queue<ProcessControlBlock> readyProcesses;
+    public Queue<ProcessControlBlock> blockedProcesses;
 
-    public List<ProcessControlBlock> allLoadedProcessControlBlocks;
-
-    public Queue<ProcessControlBlock> readyProcessControlBlocks;
-
-    public Queue<ProcessControlBlock> blockedProcessControlBlocks;
-
+    // Singleton pattern to ensure only one instance of ProcessManager
     public static synchronized ProcessManager getInstance() {
         if (instance == null)
             instance = new ProcessManager();
@@ -31,49 +28,53 @@ public class ProcessManager {
     }
 
     private ProcessManager() {
-        this.memoryManager = new MemoryManager(VM.mem);
-        this.allLoadedProcessControlBlocks = new LinkedList<>();
-        this.readyProcessControlBlocks = new LinkedList<>();
-        this.blockedProcessControlBlocks = new LinkedList<>();
+        this.memoryManager = new MemoryManager(VM.memory);
+        this.allProcesses = new LinkedList<>();
+        this.readyProcesses = new LinkedList<>();
+        this.blockedProcesses = new LinkedList<>();
     }
 
+    // Check if any process is running
     public boolean someProcessIsRunning() {
-        return this.allLoadedProcessControlBlocks.stream()
+        return this.allProcesses.stream()
                 .anyMatch(process -> process.getProcessStatus() == ProcessStatus.RUNNING);
     }
 
-    public ProcessControlBlock loadProgram(Word[] p) {
-        int neededFrames = (int) Math.ceil((double) p.length / VM.mem.pageSize);
-        int[] pageTable = new int[neededFrames];
-        boolean canLoad = this.memoryManager.allocate(p.length, pageTable);
+    // Load a program into memory
+    public ProcessControlBlock loadProgram(Word[] program) {
+        int requiredFrames = (int) Math.ceil((double) program.length / VM.memory.pageSize);
+        int[] pageTable = new int[requiredFrames];
+        boolean canLoad = this.memoryManager.allocate(program.length, pageTable);
 
         if (!canLoad) {
-            System.out.println("Memória insuficiente para carregar o programa");
+            System.out.println("Insufficient memory to load the program");
             return null;
         }
 
-        for (int i = 0; i < p.length; i++) {
-            int physicalAddress = translate(i, pageTable, VM.mem.pageSize);
-            VM.mem.memoryArray[physicalAddress].opCode = p[i].opCode;
-            VM.mem.memoryArray[physicalAddress].r1 = p[i].r1;
-            VM.mem.memoryArray[physicalAddress].r2 = p[i].r2;
-            VM.mem.memoryArray[physicalAddress].p = p[i].p;
+        for (int i = 0; i < program.length; i++) {
+            int physicalAddress = translate(i, pageTable, VM.memory.pageSize);
+            VM.memory.memoryArray[physicalAddress].opCode = program[i].opCode;
+            VM.memory.memoryArray[physicalAddress].r1 = program[i].r1;
+            VM.memory.memoryArray[physicalAddress].r2 = program[i].r2;
+            VM.memory.memoryArray[physicalAddress].p = program[i].p;
         }
 
         ProcessControlBlock processControlBlock = new ProcessControlBlock(nextProcessId(), pageTable,
                 ProcessStatus.READY, 0, new int[10]);
-        this.allLoadedProcessControlBlocks.add(processControlBlock);
-        this.readyProcessControlBlocks.add(processControlBlock);
+        this.allProcesses.add(processControlBlock);
+        this.readyProcesses.add(processControlBlock);
         return processControlBlock;
     }
 
+    // Deallocate memory for a process
     public void deallocate(ProcessControlBlock processControlBlock) {
         memoryManager.deallocate(processControlBlock.getPageTable());
-        allLoadedProcessControlBlocks.remove(processControlBlock);
-        readyProcessControlBlocks.remove(processControlBlock);
+        allProcesses.remove(processControlBlock);
+        readyProcesses.remove(processControlBlock);
     }
 
+    // Generate a new process ID
     private int nextProcessId() {
-        return processId++;
+        return processCounter++;
     }
 }

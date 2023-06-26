@@ -5,51 +5,54 @@ import domain.ProcessStatus;
 import java.util.Arrays;
 
 public class ProcessControlBlock {
-    int id;
+    int processId;
     int[] pageTable;
 
-    int pc;
+    int programCounter;
 
-    int[] registers;
+    int[] registerValues;
 
-    int clockCount;
+    int clockCycleCount;
 
     ProcessStatus processStatus;
 
-    public ProcessControlBlock(int id, int[] pageTable, ProcessStatus processStatus, int pc, int[] registers) {
-        this.id = id;
+    // Constructor for the ProcessControlBlock
+    public ProcessControlBlock(int processId, int[] pageTable, ProcessStatus processStatus, int programCounter,
+            int[] registerValues) {
+        this.processId = processId;
         this.pageTable = pageTable;
         this.processStatus = processStatus;
-        this.pc = pc;
-        this.registers = registers;
+        this.programCounter = programCounter;
+        this.registerValues = registerValues;
     }
 
-    public int getClockCount() {
-        return clockCount;
+    // Getter and setter methods for the class variables
+    public int getClockCycleCount() {
+        return clockCycleCount;
     }
 
-    public void setClockCount(int clockCount) {
-        this.clockCount = clockCount;
+    public void setClockCycleCount(int clockCycleCount) {
+        this.clockCycleCount = clockCycleCount;
     }
 
-    public int getId() {
-        return id;
+    public int getProcessId() {
+        return processId;
     }
 
     public int[] getPageTable() {
         return pageTable;
     }
 
-    public int getPc() {
-        return pc;
+    public int getProgramCounter() {
+        return programCounter;
     }
 
     public ProcessStatus getProcessStatus() {
         return processStatus;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setProcessId(int processId) {
+        this.processId = processId;
     }
 
     public void setPageTable(int[] pageTable) {
@@ -60,16 +63,19 @@ public class ProcessControlBlock {
         this.processStatus = processStatus;
     }
 
-    public void setPc(int pc) {
-        this.pc = pc;
+    public void setProgramCounter(int programCounter) {
+        this.programCounter = programCounter;
     }
 
-    public void setRegisters(int[] registers) {
-        this.registers = registers;
+    public void setRegisterValues(int[] registerValues) {
+        this.registerValues = registerValues;
     }
 
+    // Overriding the toString method to provide a custom string representation of
+    // the object
     @Override
     public String toString() {
-        return id + "\t\t | " + pc + "\t | " + processStatus + "\t | " + Arrays.toString(pageTable) + "\t\t\t | " + Arrays.toString(registers);
+        return processId + "\t\t | " + programCounter + "\t | " + processStatus + "\t | " + Arrays.toString(pageTable)
+                + "\t\t\t | " + Arrays.toString(registerValues);
     }
 }

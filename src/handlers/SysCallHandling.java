@@ -3,8 +3,6 @@ package handlers;
 import components.*;
 import domain.*;
 
-import java.util.Scanner;
-
 public class SysCallHandling {
 
     private final CPU cpu;
@@ -15,30 +13,37 @@ public class SysCallHandling {
         this.processManager = ProcessManager.getInstance();
     }
 
-    public void handle(ProcessControlBlock pcb) {   // apenas avisa - todas interrupcoes neste momento finalizam o programa
-        int operation = cpu.registers[8];
+    // Handle system calls
+    public void handle(ProcessControlBlock processBlock) {
+        int operationCode = cpu.registers[8];
         int memoryAddress = cpu.registers[9];
 
-        if (operation != 1 && operation != 2) {
+        // Invalid operation code
+        if (operationCode != 1 && operationCode != 2) {
             cpu.interrupt = Interrupts.intInstrucaoInvalida;
             return;
         }
 
+        // If CPU can access memory
         if (cpu.canAccessMemory(memoryAddress)) {
-            // requeriu IO, entrando para fila de bloqueados
-            pcb.setProcessStatus(ProcessStatus.BLOCKED);
-            processManager.blockedProcessControlBlocks.add(pcb);
+            // Process requires IO, add to blocked queue
+            processBlock.setProcessStatus(ProcessStatus.BLOCKED);
+            processManager.blockedProcesses.add(processBlock);
 
-            // pedir IO
-            IOType requestType = operation == 1 ? IOType.READ : IOType.WRITE;
+            // Request IO
+            IOType requestType = operationCode == 1 ? IOType.READ : IOType.WRITE;
             IORequest request = new IORequest(requestType, memoryAddress);
-            Console.requests.add(request);
+            Console.ioRequests.add(request);
             Console.consoleSemaphore.release();
 
-            if (Scheduler.schedulerSemaphore.availablePermits() == 0 && !processManager.readyProcessControlBlocks.isEmpty()) {
+            // If there are ready processes and scheduler is not running, release scheduler
+            if (Scheduler.schedulerSemaphore.availablePermits() == 0
+                    && !processManager.readyProcesses.isEmpty()) {
                 Scheduler.schedulerSemaphore.release();
             }
         }
-        System.out.println("                                               Chamada de components.Sistema com op  /  par:  " + cpu.registers[8] + " / " + cpu.registers[9]);
+        System.out.println(
+                "                                               System Call with op  /  par:  "
+                        + cpu.registers[8] + " / " + cpu.registers[9]);
     }
 }

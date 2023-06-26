@@ -5,19 +5,20 @@ import handlers.InterruptHandling;
 import handlers.SysCallHandling;
 
 public class VM {
-    public int memorySize;
-    public static Memory mem;
+    public int totalMemorySize;
+    public static Memory memory;
     public CPU cpu;
 
     public VM() {
-        // vm deve ser configurada com endereço de tratamento de interrupcoes e de chamadas de sistema
-        // cria memória
-        memorySize = 1024;
+        // VM should be configured with the address for interrupt handling and system
+        // calls
+        // Create memory
+        totalMemorySize = 1024;
         int pageSize = 8;
-        System.out.println("Criando memória com " + memorySize / pageSize + " frames");
-        mem = new Memory(memorySize, pageSize);
-        // cria cpu
-        cpu = new CPU(mem, true);                   // true liga debug
+        System.out.println("Creating memory with " + totalMemorySize / pageSize + " frames");
+        memory = new Memory(totalMemorySize, pageSize);
+        // Create CPU
+        cpu = new CPU(memory, true); // true enables debug mode
     }
 
     public void run() {

@@ -8,66 +8,69 @@ import static utils.MemoryTranslator.getStartFrame;
 public class MemoryManager {
 
     private Memory memory;
-    private boolean[] framesAvailable;
+    private boolean[] availableFrames;
 
     MemoryManager(Memory memory) {
         this.memory = memory;
-        this.framesAvailable = new boolean[memory.numberOfFrames];
+        this.availableFrames = new boolean[memory.numberOfFrames];
 
+        // Initialize all frames as available
         for (int i = 0; i < memory.numberOfFrames; i++) {
-            framesAvailable[i] = true;
+            availableFrames[i] = true;
         }
     }
 
-    public boolean allocate(int wordNumber, int[] pagesTable) {
-        int framesNeeded = (int) Math.ceil((double) wordNumber / this.memory.pageSize);
-        if (framesNeeded > countAvailableFrames()) {
+    // Allocate memory for a certain number of words
+    public boolean allocate(int wordCount, int[] pageTable) {
+        int requiredFrames = (int) Math.ceil((double) wordCount / this.memory.pageSize);
+        if (requiredFrames > countAvailableFrames()) {
             return false;
         }
 
-        int[] availableFrames = getAvailableFramesIndexes();
-        for (int i = 0; i < framesNeeded; i++) {
-            int frameIndex = availableFrames[i];
-            pagesTable[i] = frameIndex;
-            framesAvailable[frameIndex] = false;
+        int[] freeFrames = getAvailableFramesIndexes();
+        for (int i = 0; i < requiredFrames; i++) {
+            int frameIndex = freeFrames[i];
+            pageTable[i] = frameIndex;
+            availableFrames[frameIndex] = false;
         }
         return true;
     }
 
-    // deve ser hospedada
-    public void deallocate(int[] pagesTable) {
-        for (int frame : pagesTable) {
+    // Deallocate memory
+    public void deallocate(int[] pageTable) {
+        for (int frame : pageTable) {
             for (int j = getStartFrame(frame, memory.pageSize); j <= getEndFrame(frame, memory.pageSize); j++) {
-                desallocatePosition(j);
+                deallocatePosition(j);
             }
-            framesAvailable[frame] = true;
+            availableFrames[frame] = true;
         }
     }
-    // simplesmente libera os frames alocados
 
+    // Count the number of available frames
     private int countAvailableFrames() {
         int count = 0;
-        for (boolean frame : framesAvailable) {
+        for (boolean frame : availableFrames) {
             if (frame)
                 count++;
         }
         return count;
     }
 
+    // Get the indexes of available frames
     private int[] getAvailableFramesIndexes() {
         int[] available = new int[countAvailableFrames()];
         int j = 0;
-        for (int i = 0; i < framesAvailable.length; i++) {
-            if (framesAvailable[i]) {
+        for (int i = 0; i < availableFrames.length; i++) {
+            if (availableFrames[i]) {
                 available[j] = i;
                 j++;
             }
-            ;
         }
         return available;
     }
 
-    private void desallocatePosition(int position) {
+    // Reset the memory position
+    private void deallocatePosition(int position) {
         memory.memoryArray[position].opCode = Opcode.___;
         memory.memoryArray[position].r1 = -1;
         memory.memoryArray[position].r2 = -1;

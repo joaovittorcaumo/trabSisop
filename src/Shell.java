@@ -18,33 +18,27 @@ public class Shell extends Thread {
     @Override
     public void run() {
         super.run();
-        System.out.println("----------------------------------------------------");
-        System.out.println("-----------------Nome dos Programas-----------------");
-        System.out.println("-----------------     fatorial     -----------------");
-        System.out.println("-----------------    progMinimo    -----------------");
-        System.out.println("-----------------    fibonacci10   -----------------");
-        System.out.println("-----------------    fatorialTRAP  -----------------");
-        System.out.println("-----------------   fibonacciTRAP  -----------------");
-        System.out.println("-----------------        PB        -----------------");
-        System.out.println("-----------------        PC        -----------------");
-        System.out.println("-----------------       paIn       -----------------");
-        System.out.println("-----------------     pbOutput     -----------------");
-        System.out.println("----------------------------------------------------");
-        System.out.println("--------------------INSTRUÇOES----------------------");
-        System.out.println("---------------cria <nomeDoPrograma>----------------");
-        System.out.println("------------------listaProcessos--------------------");
-        System.out.println("---------------------dump <id>----------------------");
-        System.out.println("-------------------desaloca <id>--------------------");
-        System.out.println("----------------dumpM <inicio, fim>-----------------");
-        System.out.println("----------------------traceOn-----------------------");
-        System.out.println("----------------------traceOff----------------------");
-        System.out.println("------------------------exit------------------------");
-        System.out.println("----------------------------------------------------");
+        System.out.printf("%-60s %s\n", "---------------------------------------------------",
+                "---------------------------------------------------");
+        System.out.printf("%-60s %s\n", "--------------------Program Names------------------",
+                "----------------------Instructions-----------------");
+        System.out.printf("%-60s %s\n", "1. fatorial", "1. cria <nomeDoPrograma>");
+        System.out.printf("%-60s %s\n", "2. progMinimo", "2. listaProcessos");
+        System.out.printf("%-60s %s\n", "3. fibonacci10", "3. dump <id>");
+        System.out.printf("%-60s %s\n", "4. fatorialTRAP", "4. desaloca <id>");
+        System.out.printf("%-60s %s\n", "5. fibonacciTRAP", "5. dumpM <inicio, fim>");
+        System.out.printf("%-60s %s\n", "6. PB", "6. traceOn");
+        System.out.printf("%-60s %s\n", "7. PC", "7. traceOff");
+        System.out.printf("%-60s %s\n", "8. paIn", "8. exit");
+        System.out.printf("%-60s\n", "9. pbOutput");
+        System.out.printf("%-60s %s\n", "---------------------------------------------------",
+                "---------------------------------------------------");
 
         while (true) {
             String readLine = in.nextLine();
             String command = readLine.split(" ")[0];
-            List<String> programNames = Arrays.asList("fatorial", "progMinimo", "fibonacci10", "fatorialTRAP", "fibonacciTRAP", "PB", "PC", "paInput", "pbOutput");
+            List<String> programNames = Arrays.asList("fatorial", "progMinimo", "fibonacci10", "fatorialTRAP",
+                    "fibonacciTRAP", "PB", "PC", "paInput", "pbOutput");
             switch (command) {
                 case "cria":
                     String programName = readLine.split(" ")[1];
@@ -121,16 +115,18 @@ public class Shell extends Thread {
             Scheduler.schedulerSemaphore.release();
         }
 
-        return processControlBlock.getId();
+        return processControlBlock.getProcessId();
     }
 
     static void listProcessos() {
         System.out.println("\nID \t| Status dos processos");
-        processManager.allLoadedProcessControlBlocks.forEach(p -> System.out.println(p.getId() + "\t| " + p.getProcessStatus()));
+        processManager.allProcesses
+                .forEach(p -> System.out.println(p.getProcessId() + "\t| " + p.getProcessStatus()));
     }
 
     static void dump(int processId) {
-        ProcessControlBlock processControlBlock = processManager.allLoadedProcessControlBlocks.stream().filter(p -> p.getId() == processId).findFirst().orElse(null);
+        ProcessControlBlock processControlBlock = processManager.allProcesses.stream()
+                .filter(p -> p.getProcessId() == processId).findFirst().orElse(null);
         if (processControlBlock == null) {
             System.out.println("Processo com id" + processId + " não encontrado");
             return;
@@ -142,18 +138,19 @@ public class Shell extends Thread {
 
         System.out.println("\nDump de memória para processo " + processId);
 
-        int pageSize = VM.mem.pageSize;
+        int pageSize = VM.memory.pageSize;
         int[] pageTable = processControlBlock.getPageTable();
 
         for (int i = 0; i < pageTable.length; i++) {
             int frame = pageTable[i];
             System.out.println("\n página " + i + " frame " + frame);
-            VM.mem.dump(getStartFrame(frame, pageSize), getEndFrame(frame, pageSize) + 1);
+            VM.memory.dump(getStartFrame(frame, pageSize), getEndFrame(frame, pageSize) + 1);
         }
     }
 
     static void desaloca(int processId) {
-        ProcessControlBlock processControlBlock = processManager.allLoadedProcessControlBlocks.stream().filter(p -> p.getId() == processId).findFirst().orElse(null);
+        ProcessControlBlock processControlBlock = processManager.allProcesses.stream()
+                .filter(p -> p.getProcessId() == processId).findFirst().orElse(null);
         if (processControlBlock == null) {
             System.out.println("Processo com id" + processId + " não encontrado");
             return;
@@ -163,9 +160,8 @@ public class Shell extends Thread {
     }
 
     static void dumpM(int inicio, int fim) {
-        VM.mem.dump(inicio, fim);
+        VM.memory.dump(inicio, fim);
     }
-
 
     static void traceOn() {
         CPU.setDebug(true);

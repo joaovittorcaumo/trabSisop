@@ -7,8 +7,6 @@ import components.Scheduler;
 import domain.Interrupts;
 import domain.ProcessStatus;
 
-import java.util.Optional;
-
 public class InterruptHandling {
 
     private final ProcessManager processManager;
@@ -19,41 +17,47 @@ public class InterruptHandling {
         this.cpu = cpu;
     }
 
-    public void handle(Interrupts interrupt, int pc, ProcessControlBlock pcb) {   // apenas avisa - todas interrupcoes neste momento finalizam o programa
-        System.out.println("                                               Interrupcao " + interrupt + "   pc: " + pc);
+    // Handle different types of interrupts
+    public void handle(Interrupts interrupt, int programCounter, ProcessControlBlock processBlock) {
+        System.out.println(
+                "                                               Interrupt " + interrupt + "   pc: " + programCounter);
         switch (interrupt) {
-            case clockInterrupt -> handleClock(pc, pcb);
-            case intSTOP -> handleStop(pc, pcb);
-            case ioPronto -> handleIoPronto();
+            case clockInterrupt -> handleClock(programCounter, processBlock);
+            case intSTOP -> handleStop(programCounter, processBlock);
+            case ioPronto -> handleIoReady();
         }
     }
 
-    public void handleIoPronto() {
-        ProcessControlBlock pcb = processManager.blockedProcessControlBlocks.poll();
-        assert pcb != null;
-        pcb.setProcessStatus(ProcessStatus.READY);
-        processManager.readyProcessControlBlocks.add(pcb);
+    // Handle IO ready interrupt
+    public void handleIoReady() {
+        ProcessControlBlock processBlock = processManager.blockedProcesses.poll();
+        assert processBlock != null;
+        processBlock.setProcessStatus(ProcessStatus.READY);
+        processManager.readyProcesses.add(processBlock);
 
-        // o único processo pronto é este que voltou do IO, não tem nada rodando
+        // If the only ready process is the one that returned from IO and nothing is
+        // running
         if (Scheduler.schedulerSemaphore.availablePermits() == 0 && !processManager.someProcessIsRunning()) {
             Scheduler.schedulerSemaphore.release();
         }
     }
 
-    public void handleClock(int pc, ProcessControlBlock pcb) {
-        cpu.updatePCB(pcb, 0);
-        pcb.setProcessStatus(ProcessStatus.READY);
-        processManager.readyProcessControlBlocks.add(pcb);
+    // Handle clock interrupt
+    public void handleClock(int programCounter, ProcessControlBlock processBlock) {
+        cpu.updatePCB(processBlock, 0);
+        processBlock.setProcessStatus(ProcessStatus.READY);
+        processManager.readyProcesses.add(processBlock);
         cpu.resetClockCycles();
-        if (Scheduler.schedulerSemaphore.availablePermits() == 0 && !processManager.readyProcessControlBlocks.isEmpty()) {
+        if (Scheduler.schedulerSemaphore.availablePermits() == 0 && !processManager.readyProcesses.isEmpty()) {
             Scheduler.schedulerSemaphore.release();
         }
     }
 
-    public void handleStop(int pc, ProcessControlBlock pcb) {
-        pcb.setProcessStatus(ProcessStatus.FINISHED);
-        this.processManager.deallocate(pcb);
-        if (Scheduler.schedulerSemaphore.availablePermits() == 0 && !processManager.readyProcessControlBlocks.isEmpty()) {
+    // Handle stop interrupt
+    public void handleStop(int programCounter, ProcessControlBlock processBlock) {
+        processBlock.setProcessStatus(ProcessStatus.FINISHED);
+        this.processManager.deallocate(processBlock);
+        if (Scheduler.schedulerSemaphore.availablePermits() == 0 && !processManager.readyProcesses.isEmpty()) {
             Scheduler.schedulerSemaphore.release();
         }
     }
