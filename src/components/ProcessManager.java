@@ -9,7 +9,6 @@ import java.util.Queue;
 
 import static utils.MemoryTranslator.translate;
 
-
 public class ProcessManager {
 
     private static ProcessManager instance = null;
@@ -31,7 +30,6 @@ public class ProcessManager {
         return instance;
     }
 
-
     private ProcessManager() {
         this.memoryManager = new MemoryManager(VM.mem);
         this.allLoadedProcessControlBlocks = new LinkedList<>();
@@ -40,11 +38,12 @@ public class ProcessManager {
     }
 
     public boolean someProcessIsRunning() {
-        return this.allLoadedProcessControlBlocks.stream().anyMatch(process -> process.getProcessStatus() == ProcessStatus.RUNNING);
+        return this.allLoadedProcessControlBlocks.stream()
+                .anyMatch(process -> process.getProcessStatus() == ProcessStatus.RUNNING);
     }
 
     public ProcessControlBlock loadProgram(Word[] p) {
-        int neededFrames = Math.ceilDiv(p.length, VM.mem.pageSize);
+        int neededFrames = (int) Math.ceil((double) p.length / VM.mem.pageSize);
         int[] pageTable = new int[neededFrames];
         boolean canLoad = this.memoryManager.allocate(p.length, pageTable);
 
@@ -61,7 +60,8 @@ public class ProcessManager {
             VM.mem.memoryArray[physicalAddress].p = p[i].p;
         }
 
-        ProcessControlBlock processControlBlock = new ProcessControlBlock(nextProcessId(), pageTable, ProcessStatus.READY, 0, new int[10]);
+        ProcessControlBlock processControlBlock = new ProcessControlBlock(nextProcessId(), pageTable,
+                ProcessStatus.READY, 0, new int[10]);
         this.allLoadedProcessControlBlocks.add(processControlBlock);
         this.readyProcessControlBlocks.add(processControlBlock);
         return processControlBlock;
@@ -77,4 +77,3 @@ public class ProcessManager {
         return processId++;
     }
 }
-

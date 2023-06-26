@@ -20,7 +20,7 @@ public class MemoryManager {
     }
 
     public boolean allocate(int wordNumber, int[] pagesTable) {
-        int framesNeeded = Math.ceilDiv(wordNumber, this.memory.pageSize);
+        int framesNeeded = (int) Math.ceil((double) wordNumber / this.memory.pageSize);
         if (framesNeeded > countAvailableFrames()) {
             return false;
         }
@@ -34,7 +34,7 @@ public class MemoryManager {
         return true;
     }
 
-    // cada posição i do vetor de saída “pagesTable” informa em que frame a página i deve ser hospedada
+    // deve ser hospedada
     public void deallocate(int[] pagesTable) {
         for (int frame : pagesTable) {
             for (int j = getStartFrame(frame, memory.pageSize); j <= getEndFrame(frame, memory.pageSize); j++) {
@@ -48,7 +48,8 @@ public class MemoryManager {
     private int countAvailableFrames() {
         int count = 0;
         for (boolean frame : framesAvailable) {
-            if (frame) count++;
+            if (frame)
+                count++;
         }
         return count;
     }
